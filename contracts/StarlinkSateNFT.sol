@@ -13,24 +13,31 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /// @title StarlinkSateNFT
 /// @notice A contract for virtual satellite in the starlink ecosystem
 contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
-    // @notice event emitted upon construction of this contract, used to bootstrap external indexers
+    /// @notice event emitted upon construction of this contract, used to bootstrap external indexers
     event SateContractDeployed();
 
-    // @notice event emitted when token URI is updated
-    event SateTokenUriUpdate(
+    /// @notice event emitted when token URI is updated
+    event SateTokenUriUpdated(
         uint256 indexed _tokenId,
         string _tokenUri
     );
-    // @notice event emitted when creator is updated
-    event SateCreatorUpdate(
+    /// @notice event emitted when creator is updated
+    event SateCreatorUpdated(
         uint256 indexed _tokenId,
         address _creator
     );
 
-    // @notice event emitted when a tokens primary sale occurs
+    /// @notice event emitted when a tokens primary sale occurs
     event TokenPrimarySalePriceSet(
         uint256 indexed _tokenId,
         uint256 _salePrice
+    );
+
+    /// @notice event emitted when satellite info
+    event SateInfoUpdated(
+        uint256 indexed _tokenId,
+        uint256 _launchTime,
+        uint8 _apr
     );
 
     /// @dev Satellite Info for each Sate NFT
@@ -154,7 +161,7 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
      */
     function setTokenURI(uint256 _tokenId, string calldata _tokenUri) external onlyGovernance {
         _tokenURIs[_tokenId] = _tokenUri;
-        emit SateTokenUriUpdate(_tokenId, _tokenUri);
+        emit SateTokenUriUpdated(_tokenId, _tokenUri);
     }
 
     /**
@@ -170,7 +177,7 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         );
         for( uint256 i; i< _tokenIds.length; i++){
             _tokenURIs[_tokenIds[i]] = _tokenUris[i];
-            emit SateTokenUriUpdate(_tokenIds[i], _tokenUris[i]);
+            emit SateTokenUriUpdated(_tokenIds[i], _tokenUris[i]);
         }
     }
 
@@ -187,7 +194,7 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         );
         for( uint256 i; i< _tokenIds.length; i++){
             creators[_tokenIds[i]] = _creators[i];
-            emit SateCreatorUpdate(_tokenIds[i], _creators[i]);
+            emit SateCreatorUpdated(_tokenIds[i], _creators[i]);
         }
     }
 
@@ -197,7 +204,7 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
      @param _tokenIds The ID of the token being updated
      @param _salePrices The primary Ether sale price in WEI
      */
-    function batchSetPrimarySalePrice(uint256[] memory _tokenIds, uint256[] memory _salePrices) external {
+    function batchSetPrimarySalePrice(uint256[] memory _tokenIds, uint256[] memory _salePrices) external onlyGovernance {
         require(
             _tokenIds.length == _salePrices.length,
             "Must have equal length arrays"
@@ -213,24 +220,34 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
      @param _tokenId The ID of the token being updated
      @param _salePrice The primary Ether sale price in WEI
      */
-    function setPrimarySalePrice(uint256 _tokenId, uint256 _salePrice) external {
+    function setPrimarySalePrice(uint256 _tokenId, uint256 _salePrice) external onlyGovernance {
         _setPrimarySalePrice(_tokenId, _salePrice);
     }
 
     /**
-     @notice Records the Ether price that a given token was sold for (in WEI)
-     @dev Only admin or a smart contract can call this method
+     @notice Set satellite launch time, SATE will start to earn rewards
+     @dev Only Governance can call this method
      @param _tokenId The ID of the token being updated
-     @param _salePrice The primary Ether sale price in WEI
+     @param _timestamp Timestamp of launching satellite
      */
-    function _setPrimarySalePrice(uint256 _tokenId, uint256 _salePrice) internal onlyGovernance {
-        require(_exists(_tokenId), "Token does not exist");
-        require(_salePrice > 0, "Invalid sale price");
+    function setSateLaunchTime(uint256 _tokenId, uint256 _timestamp) external onlyGovernance {
+        _setSateLaunchTime(_tokenId, _timestamp);
+    }
 
-        // Only set it once
-        if (primarySalePrice[_tokenId] == 0) {
-            primarySalePrice[_tokenId] = _salePrice;
-            emit TokenPrimarySalePriceSet(_tokenId, _salePrice);
+    /**
+     @notice Set satellite launch time, SATE will start to earn rewards
+     @dev Only Governance can call this method
+     @param _tokenIds The ID of the token being updated
+     @param _timestamps Timestamp of launching satellite
+     */
+    function batchSetSateLaunchTime(uint256[] memory _tokenIds, uint256[] memory _timestamps) external onlyGovernance {
+        require(
+            _tokenIds.length == _timestamps.length,
+            "Must have equal length arrays"
+        );
+        
+        for( uint256 i; i< _tokenIds.length; i++){
+            _setSateLaunchTime(_tokenIds[i], _timestamps[i]);
         }
     }
 
@@ -269,6 +286,36 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         require(_creator != address(0), "Creator is zero address");
     }
 
+    /**
+     @notice Records the Ether price that a given token was sold for (in WEI)
+     @dev Only admin or a smart contract can call this method
+     @param _tokenId The ID of the token being updated
+     @param _salePrice The primary Ether sale price in WEI
+     */
+    function _setPrimarySalePrice(uint256 _tokenId, uint256 _salePrice) internal {
+        require(_exists(_tokenId), "Token does not exist");
+        require(_salePrice > 0, "Invalid sale price");
+
+        // Only set it once
+        if (primarySalePrice[_tokenId] == 0) {
+            primarySalePrice[_tokenId] = _salePrice;
+            emit TokenPrimarySalePriceSet(_tokenId, _salePrice);
+        }
+    }
+
+    /**
+     @notice Set satellite launch time, SATE will start to earn rewards
+     @dev Only Governance can call this method
+     @param _tokenId The ID of the token being updated
+     @param _timestamp Timestamp of launching satellite
+     */
+    function _setSateLaunchTime(uint256 _tokenId, uint256 _timestamp) internal {
+        SateInfo storage _sateInfo = sateInfo[_tokenId];
+        require(_sateInfo.st_launchTime == 0, "LaunchTime is already set");
+
+        _sateInfo.st_launchTime = _timestamp;
+        emit SateInfoUpdated(_tokenId, _timestamp);
+    }
 
     // Batch transfer
     /**
