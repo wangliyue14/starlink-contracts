@@ -9,6 +9,8 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+/// @title StarlinkSateNFT
+/// @notice A contract for virtual satellite in the starlink ecosystem
 contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
     // @notice event emitted upon construction of this contract, used to bootstrap external indexers
     event SateContractDeployed();
@@ -30,6 +32,13 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         uint256 _salePrice
     );
 
+    /// @dev Satellite Info for each Sate NFT
+    struct SateInfo {
+        uint256 st_planet;
+        uint256 st_speed;
+        uint256 st_radius;
+    }
+
     /// @dev current max tokenId
     uint256 public tokenIdPointer;
 
@@ -39,8 +48,8 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
     /// @dev TokenID -> Primary Ether Sale Price in Wei
     mapping(uint256 => uint256) public primarySalePrice;
 
-    /// @dev ERC721 Token ID -> ERC1155 ID -> Balance
-    mapping(uint256 => mapping(uint256 => uint256)) private balances;
+    /// @dev TokenID -> Satellite Info
+    mapping(uint256 => SateInfo) public sateInfo;
 
     /// @dev limit batching of tokens due to gas limit restrictions
     uint256 public BATCH_LIMIT;
@@ -70,8 +79,12 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
      @param _creator NFT creator - will be required for issuing royalties from secondary sales
      @return uint256 The token ID of the token that was minted
      */
-    function mint(address _beneficiary, string calldata _tokenUri, address _creator) external onlyGovernance returns (uint256) {
-
+    function mint(
+        address _beneficiary,
+        string calldata _tokenUri,
+        address _creator,
+        uint256[] memory _st_params
+    ) external onlyGovernance returns (uint256) {
         // Valid args
         _assertMintingParamsValid(_tokenUri, _creator);
 
@@ -84,6 +97,13 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
 
         // Associate nft creator
         creators[tokenId] = _creator;
+
+        // Associate satellite info
+        sateInfo[tokenId] = SateInfo(
+            _st_params[0],
+            _st_params[1],
+            _st_params[2]
+        );
 
         return tokenId;
     }
