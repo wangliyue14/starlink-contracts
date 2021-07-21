@@ -4,6 +4,7 @@ pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./ERC721/StarlinkERC721.sol";
+import "./StarlinkPlanetManager.sol";
 import "@openzeppelin/contracts/token/ERC1155/ERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
@@ -36,7 +37,9 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
     struct SateInfo {
         uint256 st_planet;
         uint256 st_speed;
-        uint256 st_radius;
+        uint256 st_launchTime;
+        uint8 st_radius;
+        uint8 st_apr;
     }
 
     /// @dev current max tokenId
@@ -83,7 +86,8 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         address _beneficiary,
         string calldata _tokenUri,
         address _creator,
-        uint256[] memory _st_params
+        uint256[2] memory _st_params256,
+        uint8[2] memory _st_params8
     ) external onlyGovernance returns (uint256) {
         // Valid args
         _assertMintingParamsValid(_tokenUri, _creator);
@@ -100,9 +104,11 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
 
         // Associate satellite info
         sateInfo[tokenId] = SateInfo(
-            _st_params[0],
-            _st_params[1],
-            _st_params[2]
+            _st_params256[0],
+            _st_params256[1],
+            0,
+            _st_params8[0],
+            _st_params8[1]
         );
 
         return tokenId;
