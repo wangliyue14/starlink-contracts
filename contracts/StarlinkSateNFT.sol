@@ -27,16 +27,11 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         address _creator
     );
 
-    /// @notice event emitted when a tokens primary sale occurs
-    event TokenPrimarySalePriceSet(
-        uint256 indexed _tokenId,
-        uint256 _salePrice
-    );
-
     /// @notice event emitted when satellite info
     event SateInfoUpdated(
         uint256 indexed _tokenId,
         uint256 _launchTime,
+        uint256 _launchPrice,
         uint8 _apr
     );
 
@@ -45,6 +40,7 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         uint256 st_planet;
         uint256 st_speed;
         uint256 st_launchTime;
+        uint256 st_launchPrice;
         uint8 st_radius;
         uint8 st_apr;
     }
@@ -54,9 +50,6 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
 
     /// @dev TokenID -> Creator address
     mapping(uint256 => address) public creators;
-
-    /// @dev TokenID -> Primary Ether Sale Price in Wei
-    mapping(uint256 => uint256) public primarySalePrice;
 
     /// @dev TokenID -> Satellite Info
     mapping(uint256 => SateInfo) public sateInfo;
@@ -114,6 +107,7 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
             _st_params256[0],
             _st_params256[1],
             0,
+            0,
             _st_params8[0],
             _st_params8[1]
         );
@@ -138,7 +132,7 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
 
         // Clean up creator mapping
         delete creators[_tokenId];
-        delete primarySalePrice[_tokenId];
+        delete sateInfo[_tokenId];
     }
 
     function _extractIncomingTokenId() internal pure returns (uint256) {
@@ -295,12 +289,12 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
     function _setPrimarySalePrice(uint256 _tokenId, uint256 _salePrice) internal {
         require(_exists(_tokenId), "Token does not exist");
         require(_salePrice > 0, "Invalid sale price");
+        SateInfo storage _sateInfo = sateInfo[_tokenId];
+        require(_sateInfo.st_launchPrice == 0, "LaunchPrice is already set");
 
         // Only set it once
-        if (primarySalePrice[_tokenId] == 0) {
-            primarySalePrice[_tokenId] = _salePrice;
-            emit TokenPrimarySalePriceSet(_tokenId, _salePrice);
-        }
+        _sateInfo.st_launchPrice = _salePrice;
+        emit SateInfoUpdated(_tokenId, _sateInfo.st_launchTime, _salePrice, _sateInfo.st_apr);
     }
 
     /**
@@ -310,11 +304,12 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
      @param _timestamp Timestamp of launching satellite
      */
     function _setSateLaunchTime(uint256 _tokenId, uint256 _timestamp) internal {
+        require(_exists(_tokenId), "Token does not exist");
         SateInfo storage _sateInfo = sateInfo[_tokenId];
         require(_sateInfo.st_launchTime == 0, "LaunchTime is already set");
 
         _sateInfo.st_launchTime = _timestamp;
-        emit SateInfoUpdated(_tokenId, _timestamp);
+        emit SateInfoUpdated(_tokenId, _timestamp, _sateInfo.st_launchPrice, _sateInfo.st_apr);
     }
 
     // Batch transfer
