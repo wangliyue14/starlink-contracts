@@ -18,6 +18,61 @@ contract StarlinkSateAuction is Ownable {
     using Address for address payable;
     using SafeERC20 for IERC20;
 
+
+    event AuctionCreated(
+        uint256 indexed tokenId
+    );
+
+    event UpdateAuctionEndTime(
+        uint256 indexed tokenId,
+        uint256 endTime
+    );
+
+    event UpdateAuctionStartTime(
+        uint256 indexed tokenId,
+        uint256 startTime
+    );
+
+    event UpdateAuctionReservePrice(
+        uint256 indexed tokenId,
+        uint256 reservePrice
+    );
+
+    event UpdateMinBidIncrement(
+        uint256 minBidIncrement
+    );
+
+    event UpdateBidWithdrawalLockTime(
+        uint256 bidWithdrawalLockTime
+    );
+
+    event BidPlaced(
+        uint256 indexed tokenId,
+        address indexed bidder,
+        uint256 bid
+    );
+
+    event BidWithdrawn(
+        uint256 indexed tokenId,
+        address indexed bidder,
+        uint256 bid
+    );
+
+    event BidRefunded(
+        address indexed bidder,
+        uint256 bid
+    );
+
+    event AuctionResulted(
+        uint256 indexed tokenId,
+        address indexed winner,
+        uint256 winningBid
+    );
+
+    event AuctionCancelled(
+        uint256 indexed tokenId
+    );
+
     /// @notice Parameters of an auction
     struct Auction {
         uint256 reservePrice;
@@ -117,7 +172,7 @@ contract StarlinkSateAuction is Ownable {
      @param _tokenId Token ID of the NFT being auctioned
      @param _amount Bid STARL amount
      */
-    function placeBid(uint256 _tokenId, uint256 _amount) external payable nonReentrant {
+    function placeBid(uint256 _tokenId, uint256 _amount) external payable {
         require(_msgSender().isContract() == false, "No contracts permitted");
 
         // Check the auction to see if this is a valid bid
@@ -132,7 +187,7 @@ contract StarlinkSateAuction is Ownable {
         // Ensure bid adheres to outbid increment and threshold
         HighestBid storage highestBid = highestBids[_tokenId];
         uint256 minBidRequired = highestBid.bid.add(minBidIncrement);
-        require(_amount >= auction.reservePrice, "Failed to outbid min bid price")
+        require(_amount >= auction.reservePrice, "Failed to outbid min bid price");
         require(_amount >= minBidRequired, "Failed to outbid highest bidder");
 
         // Transfer STARL token
@@ -156,7 +211,7 @@ contract StarlinkSateAuction is Ownable {
      @dev Only callable by the existing top bidder
      @param _tokenId Token ID of the NFT being auctioned
      */
-    function withdrawBid(uint256 _tokenId) external nonReentrant {
+    function withdrawBid(uint256 _tokenId) external {
         HighestBid storage highestBid = highestBids[_tokenId];
 
         // Ensure highest bidder is the caller
@@ -360,6 +415,24 @@ contract StarlinkSateAuction is Ownable {
 
         auctions[_tokenId].endTime = _endTimestamp;
         emit UpdateAuctionEndTime(_tokenId, _endTimestamp);
+    }
+
+    /**
+     @notice Update the designer fee
+     @dev Only admin
+     @param _designerFee New Designer Fee Percentage
+     */
+    function updateDesignerFee(uint256 _designerFee) external onlyOwner {
+        designerFee = _designerFee;
+    }
+
+    /**
+     @notice Update the vault fee
+     @dev Only admin
+     @param _vaultFee New Vault Fee Percentage
+     */
+    function updateVaultFee(uint256 _vaultFee) external onlyOwner {
+        vaultFee = _vaultFee;
     }
 
 

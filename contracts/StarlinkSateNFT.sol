@@ -60,8 +60,16 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
     /// @dev Govern - EOA address before Governance goes live
     address public governance;
 
+    /// @dev Auction - Primary Sale Contract
+    address public auction;
+
     modifier onlyGovernance() {
         require(governance == _msgSender(), "Sender must be governance.");
+        _;
+    }
+
+    modifier onlyAuction() {
+        require(auction == _msgSender(), "Sender must be auction.");
         _;
     }
 
@@ -148,6 +156,24 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
     ///////////
 
     /**
+     @notice Updates the governance contract
+     @dev Only governance can call
+     @param _governance New governance contract
+     */
+    function setGovernance(address _governance) external onlyGovernance {
+        governance = _governance;
+    }
+
+    /**
+     @notice Updates the auction contract
+     @dev Only governance can call
+     @param _auction New auctionn contract
+     */
+    function setAuction(address _auction) external onlyGovernance {
+        auction = _auction;
+    }
+
+    /**
      @notice Updates the token URI of a given token
      @dev Only admin or smart contract
      @param _tokenId The ID of the token being updated
@@ -214,7 +240,7 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
      @param _tokenId The ID of the token being updated
      @param _salePrice The primary Ether sale price in WEI
      */
-    function setPrimarySalePrice(uint256 _tokenId, uint256 _salePrice) external onlyGovernance {
+    function setPrimarySalePrice(uint256 _tokenId, uint256 _salePrice) external onlyAuction {
         _setPrimarySalePrice(_tokenId, _salePrice);
     }
 
