@@ -36,14 +36,14 @@ contract StarlinkRewardVault is Ownable {
 
         uint256 lastUpdated;
         if (stLaunchTime > lastUpdatedTime[_tokenId]) {
-            if (stLaunchTime >= now()) return 0;
+            if (stLaunchTime >= _getNow()) return 0;
 
             lastUpdated = stLaunchTime;
         }
         else {
             lastUpdated = lastUpdatedTime[_tokenId];
         }
-        return now().sub(lastUpdated).mul(stLaunchPrice).mul(stAPR).div(100).div(31536000);
+        return _getNow().sub(lastUpdated).mul(stLaunchPrice).mul(stAPR).div(100).div(31536000);
     }
 
     function claimRewards(uint256 _tokenId) external {
@@ -52,12 +52,12 @@ contract StarlinkRewardVault is Ownable {
         uint256 amount = claimable(_tokenId);
         if (amount > 0) {
             token.safeTransfer(_msgSender(), amount);
-            lastUpdatedTime[_tokenId] = now();
-            emit RewardClaimed(_tokenId, amount, now());
+            lastUpdatedTime[_tokenId] = _getNow();
+            emit RewardClaimed(_tokenId, amount, _getNow());
         }
     }
 
-    function now() internal view returns (uint256) {
+    function _getNow() internal view returns (uint256) {
         return block.timestamp;
     }
 }
