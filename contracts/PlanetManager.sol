@@ -5,13 +5,13 @@ pragma solidity ^0.6.12;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-/// @title StarlinkPlanetManager
+/// @title PlanetManager
 /// @notice A contract for planets in the virtual space
-/// @dev Used in StarlinkSateNFT.sol
-contract StarlinkPlanetManager is Ownable {
+/// @dev Used in SateNFT.sol
+contract PlanetManager is Ownable {
     using SafeMath for uint256;
 
-    event StarlinkPlanetAdded(
+    event PlanetAdded(
         uint256 indexed planetId,
         string name,
         uint256 radius
@@ -51,7 +51,7 @@ contract StarlinkPlanetManager is Ownable {
             PlanetInfo(_name, _radius)
         );
 
-        emit StarlinkPlanetAdded(indexPointer, _name, _radius);
+        emit PlanetAdded(indexPointer, _name, _radius);
         indexPointer = indexPointer.add(1);
     }
 }

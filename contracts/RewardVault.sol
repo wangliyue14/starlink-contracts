@@ -2,16 +2,16 @@
 
 pragma solidity ^0.6.12;
 
-import "./interfaces/IStarlinkSateNFT.sol";
+import "./interfaces/ISateNFT.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-/// @title StarlinkRewardVault
+/// @title RewardVault
 /// @notice A contract for generating rewards in the starlink ecosystem
-contract StarlinkRewardVault is Ownable {
+contract RewardVault is Ownable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -21,12 +21,12 @@ contract StarlinkRewardVault is Ownable {
         uint256 timestamp
     );
 
-    IStarlinkSateNFT sateNft;
+    ISateNFT sateNft;
     IERC20 token;
 
     mapping(uint256 => uint256) lastUpdatedTime;
 
-    constructor(IStarlinkSateNFT _sateNft, IERC20 _token) public {
+    constructor(ISateNFT _sateNft, IERC20 _token) public {
         sateNft = _sateNft;
         token = _token;
     }

@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  * @title ERC721 Non-Fungible Token Standard basic implementation
  * @dev see https://eips.ethereum.org/EIPS/eip-721
  */
-contract StarlinkERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable {
+contract StarlERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable {
     using SafeMath for uint256;
     using Address for address;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -187,10 +187,10 @@ contract StarlinkERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enu
      * @dev See {IERC721-approve}.
      */
     function approve(address to, uint256 tokenId) public virtual override {
-        address owner = StarlinkERC721.ownerOf(tokenId);
+        address owner = StarlERC721.ownerOf(tokenId);
         require(to != owner, "ERC721: approval to current owner");
 
-        require(_msgSender() == owner || StarlinkERC721.isApprovedForAll(owner, _msgSender()),
+        require(_msgSender() == owner || StarlERC721.isApprovedForAll(owner, _msgSender()),
             "ERC721: approve caller is not owner nor approved for all"
         );
 
@@ -292,8 +292,8 @@ contract StarlinkERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enu
      */
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view virtual returns (bool) {
         require(_exists(tokenId), "ERC721: operator query for nonexistent token");
-        address owner = StarlinkERC721.ownerOf(tokenId);
-        return (spender == owner || getApproved(tokenId) == spender || StarlinkERC721.isApprovedForAll(owner, spender));
+        address owner = StarlERC721.ownerOf(tokenId);
+        return (spender == owner || getApproved(tokenId) == spender || StarlERC721.isApprovedForAll(owner, spender));
     }
 
     /**
@@ -355,7 +355,7 @@ contract StarlinkERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enu
      * Emits a {Transfer} event.
      */
     function _burn(uint256 tokenId) internal virtual {
-        address owner = StarlinkERC721.ownerOf(tokenId); // internal owner
+        address owner = StarlERC721.ownerOf(tokenId); // internal owner
 
         _beforeTokenTransfer(owner, address(0), tokenId);
 
@@ -386,7 +386,7 @@ contract StarlinkERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enu
      * Emits a {Transfer} event.
      */
     function _transfer(address from, address to, uint256 tokenId) internal virtual {
-        require(StarlinkERC721.ownerOf(tokenId) == from, "ERC721: transfer of token that is not own"); // internal owner
+        require(StarlERC721.ownerOf(tokenId) == from, "ERC721: transfer of token that is not own"); // internal owner
         require(to != address(0), "ERC721: transfer to the zero address");
 
         _beforeTokenTransfer(from, to, tokenId);
@@ -457,7 +457,7 @@ contract StarlinkERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enu
      */
     function _approve(address to, uint256 tokenId) internal virtual {
         _tokenApprovals[tokenId] = to;
-        emit Approval(StarlinkERC721.ownerOf(tokenId), to, tokenId); // internal owner
+        emit Approval(StarlERC721.ownerOf(tokenId), to, tokenId); // internal owner
     }
 
     /**

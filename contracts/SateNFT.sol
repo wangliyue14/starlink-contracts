@@ -3,16 +3,20 @@
 pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "./ERC721/StarlinkERC721.sol";
-import "./StarlinkPlanetManager.sol";
-import "@openzeppelin/contracts/token/ERC1155/ERC1155Receiver.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "./ERC721/StarlERC721.sol";
+import "./PlanetManager.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/// @title StarlinkSateNFT
+/// @title SateNFT
 /// @notice A contract for virtual satellite in the starlink ecosystem
-contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
+contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
+    using SafeERC20 for IERC20;
+    using SafeMath for uint256;
+    using SafeMath for uint8;
+
     /// @notice event emitted upon construction of this contract, used to bootstrap external indexers
     event SateContractDeployed();
 
@@ -41,7 +45,7 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         uint256 st_speed;
         uint256 st_launchTime;
         uint256 st_launchPrice;
-        uint8 st_radius;
+        uint256 st_radius;
         uint8 st_apr;
     }
 
@@ -63,6 +67,18 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
     /// @dev Auction - Primary Sale Contract
     address public auction;
 
+    /// @dev Sate NFT Max APR
+    uint8 public constant MAX_APR = 100;
+
+    /// @dev Upgrade Paused
+    bool public upgradePaused = false;
+
+    /// @dev Vault address
+    address public vault;
+
+    /// @dev STARL Toke
+    IERC20 starlToken;
+
     modifier onlyGovernance() {
         require(governance == _msgSender(), "Sender must be governance.");
         _;
@@ -73,12 +89,18 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         _;
     }
 
+    modifier upgradeNotPaused() {
+        require(upgradePaused == false, "Upgrade puased.");
+        _;
+    }
+
     /**
      */
-    constructor(address _governance) public {
+    constructor(address _governance, IERC20 _token) public {
         governance = _governance;
         tokenIdPointer = 0;
         BATCH_LIMIT = 10;
+        starlToken = _token;
         emit SateContractDeployed();
     }
 
@@ -94,8 +116,8 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         address _beneficiary,
         string calldata _tokenUri,
         address _creator,
-        uint256[2] memory _st_params256,
-        uint8[2] memory _st_params8
+        uint256[4] memory _st_params256,
+        uint8 _st_apr
     ) external onlyGovernance returns (uint256) {
         // Valid args
         _assertMintingParamsValid(_tokenUri, _creator);
@@ -114,10 +136,10 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         sateInfo[tokenId] = SateInfo(
             _st_params256[0],
             _st_params256[1],
+            _st_params256[2],
             0,
-            0,
-            _st_params8[0],
-            _st_params8[1]
+            _st_params256[3],
+            _st_apr
         );
 
         return tokenId;
@@ -141,6 +163,24 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
         // Clean up creator mapping
         delete creators[_tokenId];
         delete sateInfo[_tokenId];
+    }
+
+    /**
+     @notice Upgrades a SATE, increases apy
+     @dev Only the owner
+     @param _tokenId the token ID to burn
+     */
+    function upgrade(uint256 _tokenId, uint8 _bonusApy) public upgradeNotPaused {
+        require(ownerOf(_tokenId) == _msgSender(), "Only NFT owner or approved");
+        require(vault != address(0x0), "Vault is not set");
+
+        SateInfo storage _sateInfo = sateInfo[_tokenId];
+        require(_sateInfo.st_apr.add(_bonusApy) <= MAX_APR, "Exceeds maximum apr");
+        require(_sateInfo.st_launchPrice > 0, "Primary sale price is not set yet");
+
+        starlToken.safeTransfer(vault, _sateInfo.st_launchPrice.mul(_bonusApy).div(100));
+        _sateInfo.st_apr = _sateInfo.st_apr + _bonusApy;
+        emit SateInfoUpdated(_tokenId, _sateInfo.st_launchTime, _sateInfo.st_launchPrice, _sateInfo.st_apr);
     }
 
     function _extractIncomingTokenId() internal pure returns (uint256) {
@@ -167,10 +207,19 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
     /**
      @notice Updates the auction contract
      @dev Only governance can call
-     @param _auction New auctionn contract
+     @param _auction New auction contract
      */
     function setAuction(address _auction) external onlyGovernance {
         auction = _auction;
+    }
+
+    /**
+     @notice Updates the vault contract
+     @dev Only governance can call
+     @param _vault New vault contract
+     */
+    function setVault(address _vault) external onlyGovernance {
+        vault = _vault;
     }
 
     /**
@@ -252,6 +301,10 @@ contract StarlinkSateNFT is StarlinkERC721("Starlink", "SATE") {
      */
     function setSateLaunchTime(uint256 _tokenId, uint256 _timestamp) external onlyGovernance {
         _setSateLaunchTime(_tokenId, _timestamp);
+    }
+
+    function setUpgradePaused(bool _upgradePaused) external onlyGovernance {
+        upgradePaused = _upgradePaused;
     }
 
     /**

@@ -2,7 +2,7 @@
 
 pragma solidity ^0.6.12;
 
-interface IStarlinkSateNFT {
+interface ISateNFT {
     function ownerOf(uint256 tokenId) external view returns (address);
     function creators(uint256 tokenId) external view returns (address);
     function isApproved(uint256 _tokenId, address _operator) external view returns (bool);

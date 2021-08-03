@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.12;
 
-import "./interfaces/IStarlinkSateNFT.sol";
+import "./interfaces/ISateNFT.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -13,14 +13,17 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * @notice Primary sale auction contract for SATE NFTs
  */
-contract StarlinkSateAuction is Ownable {
+contract SateAuction is Ownable {
     using SafeMath for uint256;
     using Address for address payable;
     using SafeERC20 for IERC20;
 
 
     event AuctionCreated(
-        uint256 indexed tokenId
+        uint256 indexed tokenId,
+        uint256 reservePrice,
+        uint256 startTimestamp,
+        uint256 endTimestamp
     );
 
     event UpdateAuctionEndTime(
@@ -95,16 +98,16 @@ contract StarlinkSateAuction is Ownable {
     mapping(uint256 => HighestBid) public highestBids;
 
     /// @notice SATE NFT - the only NFT that can be auctioned in this contract
-    IStarlinkSateNFT public sateNft;
+    ISateNFT public sateNft;
 
-    /// @notice Starlink erc20 token
+    /// @notice STARL erc20 token
     IERC20 public token;
 
     /// @notice globally and across all auctions, the amount by which a bid has to increase
     uint256 public minBidIncrement = 100000000 * (10 ** 18);
 
     /// @notice global bid withdrawal lock time
-    uint256 public bidWithdrawalLockTime = 20 minutes;
+    uint256 public bidWithdrawalLockTime = 30 minutes;
 
     /// @notice designer fee, assumed to always be to 1 decimal place i.e. 200 = 20%
     uint256 public designerFee = 200;
@@ -119,7 +122,7 @@ contract StarlinkSateAuction is Ownable {
     address payable public vault;
 
     constructor(
-        IStarlinkSateNFT _sateNft,
+        ISateNFT _sateNft,
         IERC20 _token,
         address payable _devFeeRecipient,
         address payable _vault
@@ -511,7 +514,7 @@ contract StarlinkSateAuction is Ownable {
             resulted : false
         });
 
-        emit AuctionCreated(_tokenId);
+        emit AuctionCreated(_tokenId, _reservePrice, _startTimestamp, _endTimestamp);
     }
 
     /**
