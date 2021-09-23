@@ -1,6 +1,17 @@
 ## STARLINK NFTs and Auctions
 
+## Config
+
+Create .env file in root directory and write following:
+
+STLM_CONTRACT_ADDR=[fill this once you deploy]
+STLM_OWNER=[fill the adress to receive the NFT]
+MNEMONIC_PHRASE=[fill with your wallet phrase]
+
+
 ## Install
+
+npm install
 
 ## Test
 
@@ -8,8 +19,11 @@ rinkeby
 
 npx hardhat run --network rinkeby scripts/deploy_stlm.js
 
-StlmNFT: 0xaEDd1fb4a1E1b3Ab201921D3e4FBE869D4A5988F
+Deployed StlmNFT Address:  0x545f3c98f82478a1838e066d601cb4d9d41ea194
 
-StlmAuction: 0xf043250B8Ff43D2A7fe616fc64A4671159583094
+npx hardhat verify --network rinkeby 0x545f3c98f82478a1838e066d601cb4d9d41ea194
 
-npx hardhat verify --network rinkeby 0xaEDd1fb4a1E1b3Ab201921D3e4FBE869D4A5988F
+
+run to automate minting:
+
+node scripts/mint_tokens.js

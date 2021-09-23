@@ -19,8 +19,10 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.4.1",
+    "@truffle/hdwallet-provider": "^1.5.0",
     "dotenv": "^9.0.2",
     "hardhat-deploy": "^0.7.10",
-    "sol-merger": "^3.1.0"
+    "sol-merger": "^3.1.0",
+    "web3": "^1.5.3"
   }
 }

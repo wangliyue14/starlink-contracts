@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.12;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -38,6 +39,27 @@ contract StlmNFT is ERC721("Living Module", "STLM"), Ownable {
         _setTokenURI(tokenId, _tokenUri);
         emit StlmTokenUriUpdated(tokenId, _tokenUri);
         return tokenId;
+    }
+
+    /**
+     @notice Batch mints living modules
+     @dev Only owner can mint tokens
+     @param _owners List of owners of tokens created
+     @param _uris List of metadata uri of tokens creating
+     @return uint256[] List of IDs of tokens created
+     */
+    function batchMint(address[] calldata _owners, string[] calldata _uris) external onlyOwner returns (uint256[] memory ) {
+        require(_owners.length == _uris.length, "Length should be same");
+        uint256[] memory tokenIds = new uint256[](_owners.length);
+        for(uint256 i=0; i<_owners.length; i++) {
+            tokenIdPointer = tokenIdPointer.add(1);
+            uint256 tokenId = tokenIdPointer;
+            _safeMint(_owners[i], tokenId);
+            _setTokenURI(tokenId, _uris[i]);
+            emit StlmTokenUriUpdated(tokenId, _uris[i]);
+            tokenIds[i] = tokenId;
+        }
+        return tokenIds;
     }
 
     /**
