@@ -14,12 +14,17 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const PlanetManager = await hre.ethers.getContractFactory("PlanetManager");
-  const planetManager = await PlanetManager.deploy();
+  const SateAuction = await hre.ethers.getContractFactory("SateAuction");
+  const sateAuction = await SateAuction.deploy(
+    "0x9da1E70E26156abC3B29260Df67d2aB65D761Ad6",
+    "0x5a168798df2b9d84e28958702156b036927a9e29",
+    "0x42eD619fdb869d411f9e10BEFD2df4e3460c280F",
+    "0x4C21De8A36fB3A6e18944047EF060492a77db79f"
+  );
 
-  await planetManager.deployed();
+  await sateAuction.deployed();
 
-  console.log("PlanetManager:", planetManager.address);
+  console.log("SateAuction:", sateAuction.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

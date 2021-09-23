@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.12;
 
-import "./interfaces/ISateNFT.sol";
+import "./interfaces/IStlmNFT.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -11,9 +11,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 
 /**
- * @notice Primary sale auction contract for SATE NFTs
+ * @notice Primary sale auction contract for Stlm NFTs
  */
-contract SateAuction is Ownable {
+contract StlmAuction is Ownable {
     using SafeMath for uint256;
     using Address for address payable;
     using SafeERC20 for IERC20;
@@ -91,14 +91,14 @@ contract SateAuction is Ownable {
         uint256 lastBidTime;
     }
 
-    /// @notice SATE Token ID -> Auction Parameters
+    /// @notice Stlm Token ID -> Auction Parameters
     mapping(uint256 => Auction) public auctions;
 
-    /// @notice SATE Token ID -> highest bidder info (if a bid has been received)
+    /// @notice Stlm Token ID -> highest bidder info (if a bid has been received)
     mapping(uint256 => HighestBid) public highestBids;
 
-    /// @notice SATE NFT - the only NFT that can be auctioned in this contract
-    ISateNFT public sateNft;
+    /// @notice Stlm NFT - the only NFT that can be auctioned in this contract
+    IStlmNFT public stlmNft;
 
     /// @notice STARL erc20 token
     IERC20 public token;
@@ -122,17 +122,17 @@ contract SateAuction is Ownable {
     address payable public vault;
 
     constructor(
-        ISateNFT _sateNft,
+        IStlmNFT _stlmNft,
         IERC20 _token,
         address payable _devFeeRecipient,
         address payable _vault
     ) public {
-        require(address(_sateNft) != address(0), "Invalid NFT");
+        require(address(_stlmNft) != address(0), "Invalid NFT");
         require(address(_token) != address(0), "Invalid Token");
         require(_devFeeRecipient != address(0), "Invalid Dev Fee Recipient");
         require(_vault != address(0), "Invalid Vault");
 
-        sateNft = _sateNft;
+        stlmNft = _stlmNft;
         token = _token;
         devFeeRecipient = _devFeeRecipient;
         vault = _vault;
@@ -155,7 +155,7 @@ contract SateAuction is Ownable {
     ) external onlyOwner {
         // Check owner of the token is the creator and approved
         require(
-            sateNft.isApproved(_tokenId, address(this)),
+            stlmNft.isApproved(_tokenId, address(this)),
             "Not approved"
         );
 
@@ -195,9 +195,9 @@ contract SateAuction is Ownable {
         require(_amount >= minBidRequired, "Failed to outbid highest bidder");
 
         // Transfer STARL token
-        // token.safeTransferFrom(_msgSender(), address(this), _amount);
-        address payable payableOwner = payable(owner());
-        payableOwner.transfer(_amount);
+        token.safeTransferFrom(_msgSender(), address(this), _amount);
+        // address payable payableOwner = payable(owner());
+        // payableOwner.transfer(_amount);
 
         // Refund existing top bidder if found
         if (highestBid.bidder != address(0)) {
@@ -269,7 +269,7 @@ contract SateAuction is Ownable {
         require(!auction.resulted, "auction already resulted");
 
         // Ensure this contract is approved to move the token
-        require(sateNft.isApproved(_tokenId, address(this)), "auction not approved");
+        require(stlmNft.isApproved(_tokenId, address(this)), "auction not approved");
 
         // Get info on who the highest bidder is
         HighestBid storage highestBid = highestBids[_tokenId];
@@ -282,7 +282,7 @@ contract SateAuction is Ownable {
         // Ensure there is a winner
         require(winner != address(0), "no open bids");
 
-        // // Ensure owner sent the same amount of winning bid
+        // Ensure owner sent the same amount of winning bid
         // require(winningBid == msg.value, "only result auction with winning bid");
 
         // Result the auction
@@ -293,7 +293,7 @@ contract SateAuction is Ownable {
 
         // Record the primary sale price for the NFT
         uint256 primarySalePrice = winningBid;
-        sateNft.setPrimarySalePrice(_tokenId, primarySalePrice);
+        stlmNft.setPrimarySalePrice(_tokenId, primarySalePrice);
 
         // Designer fee amount
         uint256 designerFeeAmount = winningBid.mul(designerFee).div(1000);
@@ -302,20 +302,20 @@ contract SateAuction is Ownable {
         uint256 vaultFeeAmount = winningBid.mul(vaultFee).div(1000);
 
         // Send designer fee
-        token.safeTransfer(sateNft.creators(_tokenId), designerFeeAmount);
+        token.safeTransfer(stlmNft.creators(_tokenId), designerFeeAmount);
         
         // Send vault fee
         token.safeTransfer(vault, vaultFeeAmount);
 
         // Send remaining to devs
-        // token.safeTransfer(devFeeRecipient, winningBid.sub(designerFeeAmount).sub(vaultFeeAmount));
-        // address payable tokenOwner = payable(sateNft.ownerOf(_tokenId));
+        token.safeTransfer(devFeeRecipient, winningBid.sub(designerFeeAmount).sub(vaultFeeAmount));
+        // address payable tokenOwner = payable(stlmNft.ownerOf(_tokenId));
         // tokenOwner.transfer(winningBid);
         // vault.transfer(vaultFeeAmount);
         // devFeeRecipient.transfer(winningBid.sub(designerFeeAmount).sub(vaultFeeAmount));
 
         // Transfer the token to the winner
-        sateNft.safeTransferFrom(sateNft.ownerOf(_tokenId), winner, _tokenId);
+        stlmNft.safeTransferFrom(stlmNft.ownerOf(_tokenId), winner, _tokenId);
 
         emit AuctionResulted(_tokenId, winner, winningBid);
     }

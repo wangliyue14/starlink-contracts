@@ -10,43 +10,41 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/// @title SateNFT
-/// @notice A contract for virtual satellite in the starlink ecosystem
-contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
+/// @title StlmNFT
+/// @notice A contract for virtual Living Module in the starlink ecosystem
+contract StlmNFT1 is StarlERC721("Starlink Living Module", "STLM") {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using SafeMath for uint8;
 
     /// @notice event emitted upon construction of this contract, used to bootstrap external indexers
-    event SateContractDeployed();
+    event StlmContractDeployed();
 
     /// @notice event emitted when token URI is updated
-    event SateTokenUriUpdated(
+    event StlmTokenUriUpdated(
         uint256 indexed _tokenId,
         string _tokenUri
     );
     /// @notice event emitted when creator is updated
-    event SateCreatorUpdated(
+    event StlmCreatorUpdated(
         uint256 indexed _tokenId,
         address _creator
     );
 
-    /// @notice event emitted when satellite info
-    event SateInfoUpdated(
+    /// @notice event emitted when Linving Module info
+    event StlmInfoUpdated(
         uint256 indexed _tokenId,
         uint256 _launchTime,
-        uint256 _launchPrice,
-        uint8 _apr
+        uint256 _launchPrice
     );
 
-    /// @dev Satellite Info for each Sate NFT
-    struct SateInfo {
+    /// @dev Linving Module Info for each Stlm NFT
+    struct StlmInfo {
         uint256 st_planet;
         uint256 st_speed;
         uint256 st_launchTime;
         uint256 st_launchPrice;
         uint256 st_radius;
-        uint8 st_apr;
     }
 
     /// @dev current max tokenId
@@ -55,8 +53,8 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
     /// @dev TokenID -> Creator address
     mapping(uint256 => address payable) public creators;
 
-    /// @dev TokenID -> Satellite Info
-    mapping(uint256 => SateInfo) public sateInfo;
+    /// @dev TokenID -> Linving Module Info
+    mapping(uint256 => StlmInfo) public stlmInfo;
 
     /// @dev limit batching of tokens due to gas limit restrictions
     uint256 public BATCH_LIMIT;
@@ -66,9 +64,6 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
 
     /// @dev Auction - Primary Sale Contract
     address public auction;
-
-    /// @dev Sate NFT Max APR
-    uint8 public constant MAX_APR = 100;
 
     /// @dev Upgrade Paused
     bool public upgradePaused = false;
@@ -101,11 +96,11 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
         tokenIdPointer = 0;
         BATCH_LIMIT = 10;
         starlToken = _token;
-        emit SateContractDeployed();
+        emit StlmContractDeployed();
     }
 
     /**
-     @notice Mints a SATE AND when minting to a contract checks if the beneficiary is a 721 compatible
+     @notice Mints a Stlm AND when minting to a contract checks if the beneficiary is a 721 compatible
      @dev Only senders with either the minter or smart contract role can invoke this method
      @param _beneficiary Recipient of the NFT
      @param _tokenUri URI for the token being minted
@@ -116,8 +111,7 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
         address _beneficiary,
         string calldata _tokenUri,
         address payable _creator,
-        uint256[4] memory _st_params256,
-        uint8 _st_apr
+        uint256[4] memory _st_params256
     ) external onlyGovernance returns (uint256) {
         // Valid args
         _assertMintingParamsValid(_tokenUri, _creator);
@@ -132,21 +126,20 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
         // Associate nft creator
         creators[tokenId] = _creator;
 
-        // Associate satellite info
-        sateInfo[tokenId] = SateInfo(
+        // Associate living module info
+        stlmInfo[tokenId] = StlmInfo(
             _st_params256[0],
             _st_params256[1],
             _st_params256[2],
             0,
-            _st_params256[3],
-            _st_apr
+            _st_params256[3]
         );
 
         return tokenId;
     }
 
     /**
-     @notice Burns a SATE, releasing any composed 1155 tokens held by the token itself
+     @notice Burns a Stlm, releasing any composed 1155 tokens held by the token itself
      @dev Only the owner or an approved sender can call this method
      @param _tokenId the token ID to burn
      */
@@ -162,25 +155,7 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
 
         // Clean up creator mapping
         delete creators[_tokenId];
-        delete sateInfo[_tokenId];
-    }
-
-    /**
-     @notice Upgrades a SATE, increases apy
-     @dev Only the owner
-     @param _tokenId the token ID to burn
-     */
-    function upgrade(uint256 _tokenId, uint8 _bonusApy) public upgradeNotPaused {
-        require(ownerOf(_tokenId) == _msgSender(), "Only NFT owner or approved");
-        require(vault != address(0x0), "Vault is not set");
-
-        SateInfo storage _sateInfo = sateInfo[_tokenId];
-        require(_sateInfo.st_apr.add(_bonusApy) <= MAX_APR, "Exceeds maximum apr");
-        require(_sateInfo.st_launchPrice > 0, "Primary sale price is not set yet");
-
-        starlToken.safeTransfer(vault, _sateInfo.st_launchPrice.mul(_bonusApy).div(100));
-        _sateInfo.st_apr = _sateInfo.st_apr + _bonusApy;
-        emit SateInfoUpdated(_tokenId, _sateInfo.st_launchTime, _sateInfo.st_launchPrice, _sateInfo.st_apr);
+        delete stlmInfo[_tokenId];
     }
 
     function _extractIncomingTokenId() internal pure returns (uint256) {
@@ -230,7 +205,7 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
      */
     function setTokenURI(uint256 _tokenId, string calldata _tokenUri) external onlyGovernance {
         _tokenURIs[_tokenId] = _tokenUri;
-        emit SateTokenUriUpdated(_tokenId, _tokenUri);
+        emit StlmTokenUriUpdated(_tokenId, _tokenUri);
     }
 
     /**
@@ -246,7 +221,7 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
         );
         for( uint256 i; i< _tokenIds.length; i++){
             _tokenURIs[_tokenIds[i]] = _tokenUris[i];
-            emit SateTokenUriUpdated(_tokenIds[i], _tokenUris[i]);
+            emit StlmTokenUriUpdated(_tokenIds[i], _tokenUris[i]);
         }
     }
 
@@ -263,7 +238,7 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
         );
         for( uint256 i; i< _tokenIds.length; i++){
             creators[_tokenIds[i]] = _creators[i];
-            emit SateCreatorUpdated(_tokenIds[i], _creators[i]);
+            emit StlmCreatorUpdated(_tokenIds[i], _creators[i]);
         }
     }
 
@@ -294,13 +269,13 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
     }
 
     /**
-     @notice Set satellite launch time, SATE will start to earn rewards
+     @notice Set Linving Module launch time, Stlm will start to earn rewards
      @dev Only Governance can call this method
      @param _tokenId The ID of the token being updated
-     @param _timestamp Timestamp of launching satellite
+     @param _timestamp Timestamp of launching Linving Module
      */
-    function setSateLaunchTime(uint256 _tokenId, uint256 _timestamp) external onlyGovernance {
-        _setSateLaunchTime(_tokenId, _timestamp);
+    function setStlmLaunchTime(uint256 _tokenId, uint256 _timestamp) external onlyGovernance {
+        _setStlmLaunchTime(_tokenId, _timestamp);
     }
 
     function setUpgradePaused(bool _upgradePaused) external onlyGovernance {
@@ -308,19 +283,19 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
     }
 
     /**
-     @notice Set satellite launch time, SATE will start to earn rewards
+     @notice Set Linving Module launch time, Stlm will start to earn rewards
      @dev Only Governance can call this method
      @param _tokenIds The ID of the token being updated
-     @param _timestamps Timestamp of launching satellite
+     @param _timestamps Timestamp of launching Linving Module
      */
-    function batchSetSateLaunchTime(uint256[] memory _tokenIds, uint256[] memory _timestamps) external onlyGovernance {
+    function batchSetStlmLaunchTime(uint256[] memory _tokenIds, uint256[] memory _timestamps) external onlyGovernance {
         require(
             _tokenIds.length == _timestamps.length,
             "Must have equal length arrays"
         );
         
         for( uint256 i; i< _tokenIds.length; i++){
-            _setSateLaunchTime(_tokenIds[i], _timestamps[i]);
+            _setStlmLaunchTime(_tokenIds[i], _timestamps[i]);
         }
     }
 
@@ -368,27 +343,27 @@ contract SateNFT is StarlERC721("Starlink Game Satellite", "SATE") {
     function _setPrimarySalePrice(uint256 _tokenId, uint256 _salePrice) internal {
         require(_exists(_tokenId), "Token does not exist");
         require(_salePrice > 0, "Invalid sale price");
-        SateInfo storage _sateInfo = sateInfo[_tokenId];
-        require(_sateInfo.st_launchPrice == 0, "LaunchPrice is already set");
+        StlmInfo storage _stlmInfo = stlmInfo[_tokenId];
+        require(_stlmInfo.st_launchPrice == 0, "LaunchPrice is already set");
 
         // Only set it once
-        _sateInfo.st_launchPrice = _salePrice;
-        emit SateInfoUpdated(_tokenId, _sateInfo.st_launchTime, _salePrice, _sateInfo.st_apr);
+        _stlmInfo.st_launchPrice = _salePrice;
+        emit StlmInfoUpdated(_tokenId, _stlmInfo.st_launchTime, _salePrice);
     }
 
     /**
-     @notice Set satellite launch time, SATE will start to earn rewards
+     @notice Set Linving Module launch time, Stlm will start to earn rewards
      @dev Only Governance can call this method
      @param _tokenId The ID of the token being updated
-     @param _timestamp Timestamp of launching satellite
+     @param _timestamp Timestamp of launching Linving Module
      */
-    function _setSateLaunchTime(uint256 _tokenId, uint256 _timestamp) internal {
+    function _setStlmLaunchTime(uint256 _tokenId, uint256 _timestamp) internal {
         require(_exists(_tokenId), "Token does not exist");
-        SateInfo storage _sateInfo = sateInfo[_tokenId];
-        require(_sateInfo.st_launchTime == 0, "LaunchTime is already set");
+        StlmInfo storage _stlmInfo = stlmInfo[_tokenId];
+        require(_stlmInfo.st_launchTime == 0, "LaunchTime is already set");
 
-        _sateInfo.st_launchTime = _timestamp;
-        emit SateInfoUpdated(_tokenId, _timestamp, _sateInfo.st_launchPrice, _sateInfo.st_apr);
+        _stlmInfo.st_launchTime = _timestamp;
+        emit StlmInfoUpdated(_tokenId, _timestamp, _stlmInfo.st_launchPrice);
     }
 
     // Batch transfer
